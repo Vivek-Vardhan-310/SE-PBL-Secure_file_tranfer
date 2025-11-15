@@ -1,14 +1,8 @@
 [
   {
     "uploaderId": "minny",
-    "downloaderId": "vardhan",
-    "filename": "1.c",
-    "time": "2025-11-15T14:23:20.915Z"
-  },
-  {
-    "uploaderId": "minny",
     "downloaderId": "vivek",
     "filename": "2.c",
-    "time": "2025-11-15T14:23:53.614Z"
+    "time": "2025-11-15T14:40:46.875Z"
   }
 ]

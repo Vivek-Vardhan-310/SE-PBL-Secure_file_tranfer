@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload - FileSentinel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        .container h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label {
+            margin-bottom: 10px;
+            color: #666;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .back-button {
+            background-color: #6c757d;
+        }
+        .back-button:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FileSentinel – a guardian for your files</h1>
+    </div>
+    <div class="container">
+        <h1>Upload File</h1>
+        <form id="uploadForm">
+            <label for="fileType">File Type:</label>
+            <div>
+                <input type="radio" id="public" name="fileType" value="public" checked>
+                <label for="public">Public</label>
+                <input type="radio" id="private" name="fileType" value="private">
+                <label for="private">Private</label>
+            </div>
+
+            <label for="recipientUserId" id="recipientLabel" style="display: none;">Recipient User ID:</label>
+            <input type="text" id="recipientUserId" name="recipientUserId" style="display: none;">
+
+            <label for="file">Select File (Max 10MB):</label>
+            <input type="file" id="file" name="file" required>
+
+            <button type="submit" class="button">Confirm Upload</button>
+        </form>
+        <a href="index.html" class="button back-button">Back to Home</a>
+    </div>
+    <script>
+        let users = {};
+
+        // Fetch users from server
+        async function fetchUsers() {
+            try {
+                const response = await fetch('/api/users');
+                if (response.ok) {
+                    users = await response.json();
+                } else {
+                    console.error('Failed to fetch users');
+                }
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        }
+
+        // Get currentUserId from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUserId = urlParams.get('currentUserId');
+        if (!currentUserId) {
+            alert('Invalid access. Please enter User ID from home page.');
+            window.location.href = 'index.html';
+        }
+
+        // Load users on page load
+        fetchUsers();
+
+        // Toggle recipient field based on file type
+        const publicRadio = document.getElementById('public');
+        const privateRadio = document.getElementById('private');
+        const recipientLabel = document.getElementById('recipientLabel');
+        const recipientInput = document.getElementById('recipientUserId');
+
+        publicRadio.addEventListener('change', function() {
+            if (this.checked) {
+                recipientLabel.style.display = 'none';
+                recipientInput.style.display = 'none';
+                recipientInput.required = false;
+            }
+        });
+
+        privateRadio.addEventListener('change', function() {
+            if (this.checked) {
+                recipientLabel.style.display = 'block';
+                recipientInput.style.display = 'block';
+                recipientInput.required = true;
+            }
+        });
+
+        // Validate recipient user ID on enter key
+        recipientInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const recipientUserId = recipientInput.value.trim();
+                if (!users[recipientUserId]) {
+                    alert('Invalid Recipient User ID');
+                    recipientInput.value = '';
+                }
+            }
+        });
+
+        const uploadForm = document.getElementById('uploadForm');
+        uploadForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const fileType = document.querySelector('input[name="fileType"]:checked').value;
+            const recipientUserId = recipientInput.value.trim();
+            const fileInput = document.getElementById('file');
+
+            if (fileType === 'private' && !users[recipientUserId]) {
+                alert('Invalid Recipient User ID');
+                return;
+            }
+
+            if (fileInput.files.length === 0) {
+                alert('Please select a file to upload');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('currentUserId', currentUserId);
+            formData.append('fileType', fileType);
+            if (fileType === 'private') {
+                formData.append('recipientUserId', recipientUserId);
+            }
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    // Optionally redirect or refresh
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while uploading the file');
+            }
+        });
+    </script>
+</body>
+</html>

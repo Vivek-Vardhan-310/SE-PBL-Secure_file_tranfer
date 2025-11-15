@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New User - FileSentinel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        .container h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label {
+            margin-bottom: 10px;
+            color: #666;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .back-button {
+            background-color: #6c757d;
+        }
+        .back-button:hover {
+            background-color: #545b62;
+        }
+        .keys {
+            text-align: left;
+            margin-top: 20px;
+            display: none;
+        }
+        .keys textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FileSentinel – a guardian for your files</h1>
+    </div>
+    <div class="container">
+        <h1>Create New User</h1>
+        <form id="createUserForm">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" name="userId" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <button type="submit" class="button">Create User</button>
+        </form>
+        <div id="keys" class="keys">
+            <h2>Your Keys</h2>
+            <label>Private Key:</label>
+            <textarea id="privateKey" readonly></textarea>
+            <label>Public Key:</label>
+            <textarea id="publicKey" readonly></textarea>
+            <p><strong>Save your private key securely! It will not be shown again.</strong></p>
+        </div>
+        <a href="index.html" class="button back-button">Back to Home</a>
+    </div>
+    <script>
+        const createUserForm = document.getElementById('createUserForm');
+        const keysDiv = document.getElementById('keys');
+        const privateKeyTextarea = document.getElementById('privateKey');
+        const publicKeyTextarea = document.getElementById('publicKey');
+
+        createUserForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const userId = document.getElementById('userId').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!userId || !password) {
+                alert('Please enter a User ID and Password');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/create-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userId, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    privateKeyTextarea.value = data.privateKey;
+                    publicKeyTextarea.value = data.publicKey;
+                    keysDiv.style.display = 'block';
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while creating the user');
+            }
+        });
+    </script>
+</body>
+</html>

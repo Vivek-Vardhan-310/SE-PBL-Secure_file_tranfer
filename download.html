@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download - FileSentinel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        .container h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label {
+            margin-bottom: 10px;
+            color: #666;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .back-button {
+            background-color: #6c757d;
+        }
+        .back-button:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FileSentinel – a guardian for your files</h1>
+    </div>
+    <div class="container">
+        <h1>Download File</h1>
+        <form id="downloadForm">
+            <label for="senderUserId">Sender User ID:</label>
+            <input type="text" id="senderUserId" name="senderUserId" required>
+
+            <label for="file">Select File:</label>
+            <select id="file" name="file" required>
+                <option value="">Choose a file...</option>
+            </select>
+
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+
+
+
+            <button type="submit" class="button">Confirm Download</button>
+        </form>
+        <a href="index.html" class="button back-button">Back to Home</a>
+    </div>
+    <script>
+        // Get currentUserId from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUserId = urlParams.get('currentUserId');
+        if (!currentUserId) {
+            alert('Invalid access. Please enter User ID from home page.');
+            window.location.href = 'index.html';
+        }
+
+        let users = {};
+        let accessibleFiles = [];
+
+        // Fetch users from server
+        async function fetchUsers() {
+            try {
+                const response = await fetch('/api/users');
+                if (response.ok) {
+                    users = await response.json();
+                } else {
+                    console.error('Failed to fetch users');
+                }
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+        }
+
+        const senderUserIdInput = document.getElementById('senderUserId');
+        const fileSelect = document.getElementById('file');
+        const passwordInput = document.getElementById('password');
+        const downloadForm = document.getElementById('downloadForm');
+
+        // Load users on page load
+        fetchUsers();
+
+        // Validate sender user ID on enter key
+        senderUserIdInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const senderUserId = senderUserIdInput.value.trim();
+                if (!users[senderUserId]) {
+                    alert('Invalid Sender User ID');
+                    senderUserIdInput.value = '';
+                }
+            }
+        });
+
+        // Load accessible files on page load
+        async function loadAccessibleFiles() {
+            try {
+                const response = await fetch(`/api/files/${currentUserId}`);
+                if (response.ok) {
+                    accessibleFiles = await response.json();
+                    if (accessibleFiles.length === 0) {
+                        alert('No files available');
+                        fileSelect.innerHTML = '<option value="">Choose a file...</option>';
+                        fileSelect.disabled = true;
+                        return;
+                    }
+                    // Populate files
+                    fileSelect.disabled = false;
+                    fileSelect.innerHTML = '<option value="">Choose a file...</option>';
+                    accessibleFiles.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file.name;
+                        option.textContent = `${file.name} (from ${file.senderId})`;
+                        fileSelect.appendChild(option);
+                    });
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Error loading files');
+                    fileSelect.innerHTML = '<option value="">Choose a file...</option>';
+                    fileSelect.disabled = true;
+                }
+            } catch (error) {
+                console.error('Error fetching files:', error);
+                alert('An error occurred while fetching files');
+            }
+        }
+
+        loadAccessibleFiles();
+
+        downloadForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const senderUserId = senderUserIdInput.value.trim();
+            const selectedFile = fileSelect.value;
+            const password = passwordInput.value;
+
+            if (!selectedFile) {
+                alert('Please select a file');
+                return;
+            }
+
+            if (!password) {
+                alert('Please enter your password');
+                return;
+            }
+
+            // Find the file entry from accessibleFiles
+            const fileEntry = accessibleFiles.find(f => f.name === selectedFile);
+
+            if (!fileEntry) {
+                alert('File not found');
+                return;
+            }
+
+            const requestBody = {
+                filename: fileEntry.filename,
+                currentUserId: currentUserId,
+                password: password
+            };
+
+            try {
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = selectedFile;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    alert('Download completed');
+                } else {
+                    const data = await response.json();
+                    alert(data.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while downloading the file');
+            }
+        });
+    </script>
+</body>
+</html>

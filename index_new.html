@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileSentinel – a guardian for your files</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        .container h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 300px;
+        }
+        label {
+            color: #666;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FileSentinel – a guardian for your files</h1>
+    </div>
+    <div class="container">
+        <h1>Secure File Sharing</h1>
+        <p>Share files securely with end-to-end encryption. Choose to upload or download files with confidence.</p>
+        <form id="userForm">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" name="userId" required>
+            <br><br>
+            <button type="button" id="uploadBtn" class="button">Upload</button>
+            <button type="button" id="downloadBtn" class="button">Download</button>
+        </form>
+        <div id="error" class="error"></div>
+    </div>
+    <script>
+        const userIdInput = document.getElementById('userId');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const errorDiv = document.getElementById('error');
+
+        uploadBtn.addEventListener('click', async function() {
+            const userId = userIdInput.value.trim();
+            if (userId) {
+                try {
+                    const response = await fetch(`http://localhost:3000/api/users/${userId}`);
+                    const data = await response.json();
+                    if (data.exists) {
+                        window.location.href = `upload_new.html?currentUserId=${encodeURIComponent(userId)}`;
+                    } else {
+                        errorDiv.textContent = 'Invalid User ID';
+                    }
+                } catch (error) {
+                    errorDiv.textContent = 'Error connecting to server';
+                }
+            } else {
+                errorDiv.textContent = 'Please enter a User ID';
+            }
+        });
+
+        downloadBtn.addEventListener('click', async function() {
+            const userId = userIdInput.value.trim();
+            if (userId) {
+                try {
+                    const response = await fetch(`http://localhost:3000/api/users/${userId}`);
+                    const data = await response.json();
+                    if (data.exists) {
+                        window.location.href = `download_new.html?currentUserId=${encodeURIComponent(userId)}`;
+                    } else {
+                        errorDiv.textContent = 'Invalid User ID';
+                    }
+                } catch (error) {
+                    errorDiv.textContent = 'Error connecting to server';
+                }
+            } else {
+                errorDiv.textContent = 'Please enter a User ID';
+            }
+        });
+    </script>
+</body>
+</html>

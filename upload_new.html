@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload - FileSentinel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        .container h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label {
+            margin-bottom: 10px;
+            color: #666;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input[type="radio"] {
+            margin-right: 5px;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .back-button {
+            background-color: #6c757d;
+        }
+        .back-button:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FileSentinel – a guardian for your files</h1>
+    </div>
+    <div class="container">
+        <h1>Upload File</h1>
+        <form id="uploadForm">
+            <label for="fileType">File Type:</label>
+            <div>
+                <input type="radio" id="public" name="fileType" value="public" checked>
+                <label for="public">Public</label>
+                <input type="radio" id="private" name="fileType" value="private">
+                <label for="private">Private</label>
+            </div>
+
+            <div id="recipientField" style="display: none;">
+                <label for="recipientUserId">Recipient User ID:</label>
+                <input type="text" id="recipientUserId" name="recipientUserId">
+            </div>
+
+            <label for="file">Select File:</label>
+            <input type="file" id="file" name="file" required>
+
+            <button type="submit" class="button">Confirm Upload</button>
+        </form>
+        <a href="index_new.html" class="button back-button">Back to Home</a>
+    </div>
+    <script>
+        // Get currentUserId from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUserId = urlParams.get('currentUserId');
+        if (!currentUserId) {
+            alert('Invalid access. Please enter User ID from home page.');
+            window.location.href = 'index_new.html';
+        }
+
+        // Toggle recipient field based on file type
+        const publicRadio = document.getElementById('public');
+        const privateRadio = document.getElementById('private');
+        const recipientField = document.getElementById('recipientField');
+        const recipientInput = document.getElementById('recipientUserId');
+
+        publicRadio.addEventListener('change', function() {
+            if (this.checked) {
+                recipientField.style.display = 'none';
+                recipientInput.required = false;
+            }
+        });
+
+        privateRadio.addEventListener('change', function() {
+            if (this.checked) {
+                recipientField.style.display = 'block';
+                recipientInput.required = true;
+            }
+        });
+
+        const uploadForm = document.getElementById('uploadForm');
+        uploadForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const fileType = document.querySelector('input[name="fileType"]:checked').value;
+            const recipientUserId = recipientInput.value.trim();
+            const fileInput = document.getElementById('file');
+
+            if (fileType === 'private' && !recipientUserId) {
+                alert('Please enter recipient User ID for private files');
+                return;
+            }
+
+            if (fileInput.files.length > 0) {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('currentUserId', currentUserId);
+                formData.append('fileType', fileType);
+                if (fileType === 'private') {
+                    formData.append('recipientUserId', recipientUserId);
+                }
+
+                try {
+                    const response = await fetch('http://localhost:3000/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert('File uploaded successfully!');
+                        uploadForm.reset();
+                        recipientField.style.display = 'none';
+                        recipientInput.required = false;
+                    } else {
+                        alert(data.error || 'Upload failed');
+                    }
+                } catch (error) {
+                    alert('Error uploading file');
+                }
+            } else {
+                alert('Please select a file to upload');
+            }
+        });
+    </script>
+</body>
+</html>

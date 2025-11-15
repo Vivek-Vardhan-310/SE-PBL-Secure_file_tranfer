@@ -183,6 +183,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
         type: fileType,
         filename: req.file.filename,
         uploaderId: currentUserId,
+        uploadTime: new Date().toISOString(),
         ...(fileType === 'private' && { downloaderId: recipientUserId })
     };
 
@@ -296,6 +297,55 @@ app.post('/api/verify-key', (req, res) => {
     } else {
         res.json({ valid: false });
     }
+});
+
+app.get('/api/user-files/:userId', (req, res) => {
+    const { userId } = req.params;
+    if (!users[userId]) {
+        return res.status(400).json({ error: 'Invalid user' });
+    }
+
+    // Return only files uploaded by this user
+    const userUploadedFiles = users[userId].files.map(file => ({
+        ...file,
+        uploadTime: file.uploadTime || new Date().toISOString() // Add upload time if not present
+    }));
+    res.json(userUploadedFiles);
+});
+
+app.post('/api/delete', (req, res) => {
+    const { filename, currentUserId, password } = req.body;
+
+    if (!users[currentUserId]) {
+        return res.status(400).json({ error: 'Invalid user' });
+    }
+
+    // Verify password
+    if (users[currentUserId].password !== password) {
+        return res.status(403).json({ error: 'Invalid password' });
+    }
+
+    // Find and remove the file from user's files array
+    const fileIndex = users[currentUserId].files.findIndex(f => f.filename === filename);
+    if (fileIndex === -1) {
+        return res.status(404).json({ error: 'File not found' });
+    }
+
+    const fileEntry = users[currentUserId].files[fileIndex];
+
+    // Remove file from disk
+    const filePath = path.join(uploadsDir, filename);
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+
+    // Remove from user's files array
+    users[currentUserId].files.splice(fileIndex, 1);
+
+    // Save updated users to file
+    saveUsers(users);
+
+    res.json({ message: 'File deleted successfully' });
 });
 
 app.get('/api/notifications/:userId', (req, res) => {

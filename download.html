@@ -51,10 +51,16 @@
         input[type="text"], input[type="password"], select {
             width: 100%;
             padding: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 16px;
+        }
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: none;
         }
         .button {
             display: inline-block;
@@ -89,9 +95,10 @@
         <form id="downloadForm">
             <label for="senderUserId">Sender User ID:</label>
             <input type="text" id="senderUserId" name="senderUserId" required>
+            <div id="senderError" class="error-message">Invalid Sender User ID</div>
 
             <label for="file">Select File:</label>
-            <select id="file" name="file" required>
+            <select id="file" name="file" required disabled>
                 <option value="">Choose a file...</option>
             </select>
 
@@ -138,17 +145,43 @@
         // Load users on page load
         fetchUsers();
 
-        // Validate sender user ID on enter key
-        senderUserIdInput.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const senderUserId = senderUserIdInput.value.trim();
-                if (!users[senderUserId]) {
-                    alert('Invalid Sender User ID');
-                    senderUserIdInput.value = '';
+        // Validate sender user ID on input change
+        senderUserIdInput.addEventListener('input', function() {
+            const senderUserId = senderUserIdInput.value.trim();
+            const senderError = document.getElementById('senderError');
+            if (senderUserId && !users[senderUserId]) {
+                senderError.style.display = 'block';
+                fileSelect.disabled = true;
+                fileSelect.innerHTML = '<option value="">Choose a file...</option>';
+            } else {
+                senderError.style.display = 'none';
+                if (senderUserId) {
+                    // Populate files for valid sender
+                    populateFilesForSender(senderUserId);
+                } else {
+                    fileSelect.disabled = true;
+                    fileSelect.innerHTML = '<option value="">Choose a file...</option>';
                 }
             }
         });
+
+        // Function to populate files for a specific sender
+        function populateFilesForSender(senderUserId) {
+            const senderFiles = accessibleFiles.filter(file => file.senderId === senderUserId);
+            if (senderFiles.length === 0) {
+                fileSelect.innerHTML = '<option value="">No files available from this sender</option>';
+                fileSelect.disabled = true;
+            } else {
+                fileSelect.disabled = false;
+                fileSelect.innerHTML = '<option value="">Choose a file...</option>';
+                senderFiles.forEach(file => {
+                    const option = document.createElement('option');
+                    option.value = file.name;
+                    option.textContent = file.name;
+                    fileSelect.appendChild(option);
+                });
+            }
+        }
 
         // Load accessible files on page load
         async function loadAccessibleFiles() {
@@ -156,30 +189,13 @@
                 const response = await fetch(`/api/files/${currentUserId}`);
                 if (response.ok) {
                     accessibleFiles = await response.json();
-                    if (accessibleFiles.length === 0) {
-                        alert('No files available');
-                        fileSelect.innerHTML = '<option value="">Choose a file...</option>';
-                        fileSelect.disabled = true;
-                        return;
-                    }
-                    // Populate files
-                    fileSelect.disabled = false;
-                    fileSelect.innerHTML = '<option value="">Choose a file...</option>';
-                    accessibleFiles.forEach(file => {
-                        const option = document.createElement('option');
-                        option.value = file.name;
-                        option.textContent = `${file.name} (from ${file.senderId})`;
-                        fileSelect.appendChild(option);
-                    });
                 } else {
-                    const data = await response.json();
-                    alert(data.error || 'Error loading files');
-                    fileSelect.innerHTML = '<option value="">Choose a file...</option>';
-                    fileSelect.disabled = true;
+                    console.error('Error loading files');
+                    accessibleFiles = [];
                 }
             } catch (error) {
                 console.error('Error fetching files:', error);
-                alert('An error occurred while fetching files');
+                accessibleFiles = [];
             }
         }
 

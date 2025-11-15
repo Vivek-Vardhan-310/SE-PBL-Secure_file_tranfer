@@ -11,19 +11,6 @@
     "password": "minny123",
     "files": [
       {
-        "name": "1.c",
-        "type": "public",
-        "filename": "1763217580306-598272713.c",
-        "uploaderId": "minny"
-      },
-      {
-        "name": "2.c",
-        "type": "private",
-        "filename": "1763217592132-66123247.c",
-        "uploaderId": "minny",
-        "downloaderId": "vivek"
-      },
-      {
         "name": "3.exe",
         "type": "private",
         "filename": "1763217605877-758050596.exe",

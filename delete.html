@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Files - FileSentinel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 90%;
+        }
+        .container h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .file-info {
+            text-align: left;
+            flex-grow: 1;
+        }
+        .file-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .file-meta {
+            font-size: 14px;
+            color: #666;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .password-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        input[type="password"] {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .back-button {
+            background-color: #6c757d;
+        }
+        .back-button:hover {
+            background-color: #545b62;
+        }
+        .no-files {
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FileSentinel – a guardian for your files</h1>
+    </div>
+    <div class="container">
+        <h1>Delete Your Files</h1>
+        <div id="fileListContainer">
+            <p>Loading files...</p>
+        </div>
+        <div class="password-section">
+            <label for="password">Enter your password to confirm deletion:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <a href="index.html" class="button back-button">Back to Home</a>
+    </div>
+    <script>
+        // Get currentUserId from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUserId = urlParams.get('currentUserId');
+        if (!currentUserId) {
+            alert('Invalid access. Please enter User ID from home page.');
+            window.location.href = 'index.html';
+        }
+
+        let userFiles = [];
+
+        // Fetch user's uploaded files
+        async function loadUserFiles() {
+            try {
+                const response = await fetch(`/api/user-files/${currentUserId}`);
+                if (response.ok) {
+                    userFiles = await response.json();
+                    displayFiles();
+                } else {
+                    const data = await response.json();
+                    document.getElementById('fileListContainer').innerHTML = `<p class="no-files">${data.error || 'Error loading files'}</p>`;
+                }
+            } catch (error) {
+                console.error('Error fetching files:', error);
+                document.getElementById('fileListContainer').innerHTML = '<p class="no-files">An error occurred while fetching files</p>';
+            }
+        }
+
+        function displayFiles() {
+            const container = document.getElementById('fileListContainer');
+            if (userFiles.length === 0) {
+                container.innerHTML = '<p class="no-files">No files uploaded yet.</p>';
+                return;
+            }
+
+            const fileList = document.createElement('ul');
+            fileList.className = 'file-list';
+
+            userFiles.forEach(file => {
+                const listItem = document.createElement('li');
+                listItem.className = 'file-item';
+
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'file-info';
+                fileInfo.innerHTML = `
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-meta">Type: ${file.type} | Uploaded: ${new Date(file.uploadTime || Date.now()).toLocaleString()}</div>
+                `;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', () => confirmDelete(file.filename, file.name));
+
+                listItem.appendChild(fileInfo);
+                listItem.appendChild(deleteBtn);
+                fileList.appendChild(listItem);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(fileList);
+        }
+
+        async function confirmDelete(filename, fileName) {
+            const password = document.getElementById('password').value;
+            if (!password) {
+                alert('Please enter your password to confirm deletion');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete "${fileName}"? This action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filename: filename,
+                        currentUserId: currentUserId,
+                        password: password
+                    })
+                });
+
+                if (response.ok) {
+                    alert('File deleted successfully');
+                    // Remove from local list
+                    userFiles = userFiles.filter(f => f.filename !== filename);
+                    displayFiles();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Error deleting file');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the file');
+            }
+        }
+
+        loadUserFiles();
+    </script>
+</body>
+</html>

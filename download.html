@@ -135,7 +135,7 @@
 
             <button type="submit" class="button">Confirm Download</button>
         </form>
-        <a href="home.html?userId=${encodeURIComponent(currentUserId)}" class="button back-button">Back to Home</a>
+        <a href="home.html?userId=${encodeURIComponent(currentUserId)}" class="button back-button" id="backButton">Back to Home</a>
     </div>
     <script>
         // Get currentUserId from URL parameter
@@ -226,6 +226,9 @@
         }
 
         loadAccessibleFiles();
+
+        // Set back button href dynamically
+        document.getElementById('backButton').href = `home.html?userId=${encodeURIComponent(currentUserId)}`;
 
         downloadForm.addEventListener('submit', async function(event) {
             event.preventDefault();

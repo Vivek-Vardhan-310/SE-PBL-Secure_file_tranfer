@@ -141,7 +141,7 @@
 
             <button type="submit" class="button">Confirm Upload</button>
         </form>
-        <a href="home.html?userId=${encodeURIComponent(currentUserId)}" class="button back-button">Back to Home</a>
+        <a href="home.html?userId=${encodeURIComponent(currentUserId)}" class="button back-button" id="backButton">Back to Home</a>
     </div>
     <script>
         let users = {};
@@ -170,6 +170,9 @@
 
         // Load users on page load
         fetchUsers();
+
+        // Set back button href dynamically
+        document.getElementById('backButton').href = `home.html?userId=${encodeURIComponent(currentUserId)}`;
 
         // Toggle recipient field based on file type
         const publicRadio = document.getElementById('public');

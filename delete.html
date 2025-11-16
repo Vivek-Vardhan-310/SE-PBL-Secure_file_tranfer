@@ -165,7 +165,7 @@
             <label for="password">Enter your password to confirm deletion:</label>
             <input type="password" id="password" name="password" required>
         </div>
-        <a href="home.html?userId=${encodeURIComponent(currentUserId)}" class="button back-button">Back to Home</a>
+        <a href="home.html?userId=${encodeURIComponent(currentUserId)}" class="button back-button" id="backButton">Back to Home</a>
     </div>
     <script>
         // Get currentUserId from URL parameter
@@ -270,6 +270,9 @@
         }
 
         loadUserFiles();
+
+        // Set back button href dynamically
+        document.getElementById('backButton').href = `home.html?userId=${encodeURIComponent(currentUserId)}`;
     </script>
 </body>
 </html>

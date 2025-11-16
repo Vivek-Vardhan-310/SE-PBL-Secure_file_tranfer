@@ -142,6 +142,19 @@ app.get('/api/users/:userId', (req, res) => {
     }
 });
 
+app.post('/api/login', (req, res) => {
+    const { userId, password } = req.body;
+    if (!userId || !password) {
+        return res.status(400).json({ error: 'User ID and password are required' });
+    }
+
+    if (users[userId] && users[userId].password === password) {
+        res.json({ success: true, message: 'Login successful' });
+    } else {
+        res.status(401).json({ error: 'Invalid user ID or password' });
+    }
+});
+
 app.get('/api/users', (req, res) => {
     res.json(users);
 });

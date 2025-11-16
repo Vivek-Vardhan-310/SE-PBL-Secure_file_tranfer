@@ -108,6 +108,7 @@
             <button type="button" id="uploadBtn" class="button">Upload</button>
             <button type="button" id="downloadBtn" class="button">Download</button>
             <button type="button" id="deleteBtn" class="button">Delete Files</button>
+            <button type="button" id="notificationsBtn" class="button">Notifications</button>
         </form>
         <br>
         <a href="newuser.html" class="button">Create New User</a>
@@ -118,6 +119,7 @@
         const uploadBtn = document.getElementById('uploadBtn');
         const downloadBtn = document.getElementById('downloadBtn');
         const deleteBtn = document.getElementById('deleteBtn');
+        const notificationsBtn = document.getElementById('notificationsBtn');
 
         uploadBtn.addEventListener('click', async function() {
             const userId = userIdInput.value.trim();
@@ -173,6 +175,27 @@
                 const data = await response.json();
                 if (data.exists) {
                     window.location.href = `delete.html?currentUserId=${encodeURIComponent(userId)}`;
+                } else {
+                    alert('Please enter a valid User ID');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while validating the user');
+            }
+        });
+
+        notificationsBtn.addEventListener('click', async function() {
+            const userId = userIdInput.value.trim();
+            if (!userId) {
+                alert('Please enter a User ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${encodeURIComponent(userId)}`);
+                const data = await response.json();
+                if (data.exists) {
+                    window.location.href = `notifications.html?currentUserId=${encodeURIComponent(userId)}`;
                 } else {
                     alert('Please enter a valid User ID');
                 }

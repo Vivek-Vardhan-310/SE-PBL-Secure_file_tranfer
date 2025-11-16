@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - FileSentinel</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #1E293B;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .header h1 {
+            color: #1E293B;
+            font-size: 36px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: #FFFFFF;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+            max-width: 800px;
+            width: 90%;
+        }
+        .container h1 {
+            color: #1E293B;
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 32px;
+        }
+        .notifications-list {
+            text-align: left;
+            margin-top: 20px;
+        }
+        .notification-item {
+            background-color: #F1F5F9;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #2563EB;
+        }
+        .notification-item strong {
+            color: #1E293B;
+        }
+        .notification-item .time {
+            color: #64748B;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .no-notifications {
+            color: #64748B;
+            font-style: italic;
+        }
+        .button {
+            display: inline-block;
+            padding: 14px 26px;
+            margin: 12px;
+            background-color: #2563EB;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #1D4ED8;
+        }
+        .button:active {
+            background-color: #1E40AF;
+        }
+        .back-button {
+            background-color: #64748B;
+            color: #FFFFFF;
+        }
+        .back-button:hover {
+            background-color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FileSentinel – a guardian for your files</h1>
+    </div>
+    <div class="container">
+        <h1>Notifications</h1>
+        <div id="notificationsContainer">
+            <p>Loading notifications...</p>
+        </div>
+        <a href="index.html" class="button back-button">Back to Home</a>
+    </div>
+    <script>
+        // Get currentUserId from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUserId = urlParams.get('currentUserId');
+        if (!currentUserId) {
+            alert('Invalid access. Please enter User ID from home page.');
+            window.location.href = 'index.html';
+        }
+
+        // Function to format date
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString();
+        }
+
+        // Load notifications
+        async function loadNotifications() {
+            try {
+                const response = await fetch(`/api/notifications/${currentUserId}`);
+                if (response.ok) {
+                    const notifications = await response.json();
+                    displayNotifications(notifications);
+                } else {
+                    document.getElementById('notificationsContainer').innerHTML = '<p>Error loading notifications.</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+                document.getElementById('notificationsContainer').innerHTML = '<p>Error loading notifications.</p>';
+            }
+        }
+
+        // Display notifications
+        function displayNotifications(notifications) {
+            const container = document.getElementById('notificationsContainer');
+            if (notifications.length === 0) {
+                container.innerHTML = '<p class="no-notifications">No notifications yet.</p>';
+                return;
+            }
+
+            let html = '<div class="notifications-list">';
+            notifications.forEach(notification => {
+                html += `
+                    <div class="notification-item">
+                        <strong>${notification.downloaderId}</strong> downloaded your file <strong>${notification.filename}</strong>
+                        <div class="time">${formatDate(notification.time)}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // Load notifications on page load
+        loadNotifications();
+    </script>
+</body>
+</html>
